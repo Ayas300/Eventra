@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import OrganizerDashboard from './pages/OrganizerDashboard';
 
 function App() {
   return (
@@ -36,12 +37,7 @@ function App() {
             path="/organizer-dashboard"
             element={
               <ProtectedRoute
-                element={
-                  <div style={{ padding: '40px', textAlign: 'center' }}>
-                    <h1>Organizer Dashboard</h1>
-                    <p>This page is protected for organizers only.</p>
-                  </div>
-                }
+                element={<OrganizerDashboard />}
                 allowedRoles="organizer"
               />
             }
