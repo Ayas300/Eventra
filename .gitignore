@@ -1,0 +1,25 @@
+# Node modules
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files
+backend/.env
+frontend/.env
+.env
+.env.local
+
+# Build outputs
+backend/dist/
+frontend/dist/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+
+# Vite cache
+.vite/
+
+# IDE
+.vscode/
