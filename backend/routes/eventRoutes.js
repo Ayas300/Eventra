@@ -4,12 +4,18 @@ import {
   updateEvent,
   deleteEvent,
   getMyEvents,
+  getEvents,
+  getEventById,
 } from '../controllers/eventController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// All event routes are restricted to organizers
+// Public routes for attendees
+router.route('/').get(getEvents);
+router.route('/:id').get(getEventById);
+
+// The routes below require organizer authentication
 router.use(protect, authorize('organizer'));
 
 router.route('/').post(createEvent);

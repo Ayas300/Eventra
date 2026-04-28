@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import OrganizerDashboard from './pages/OrganizerDashboard';
+import EventDetails from './pages/EventDetails';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
           />
 
           {/* Catch-all - redirect to home */}
+          <Route path="/events/:id" element={<EventDetails />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

@@ -139,3 +139,49 @@ export const getMyEvents = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get all public events (with basic filtering)
+// @route   GET /api/events
+// @access  Public
+export const getEvents = async (req, res) => {
+  try {
+    const { location, date } = req.query;
+
+    const filter = {};
+
+    if (location) {
+      filter.location = { $regex: location, $options: 'i' };
+    }
+
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      filter.date = { $gte: start, $lt: end };
+    }
+
+    const events = await Event.find(filter).sort({ date: 1 });
+
+    res.status(200).json({ success: true, count: events.length, events });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get single event by id
+// @route   GET /api/events/:id
+// @access  Public
+export const getEventById = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    res.status(200).json({ success: true, event });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

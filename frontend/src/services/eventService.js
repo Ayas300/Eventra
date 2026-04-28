@@ -2,6 +2,24 @@ import apiClient from './api';
 
 const EVENT_PREFIX = '/events';
 
+export const fetchAllEvents = async (filters = {}) => {
+  try {
+    const response = await apiClient.get(EVENT_PREFIX, { params: filters });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch events' };
+  }
+};
+
+export const fetchEventById = async (eventId) => {
+  try {
+    const response = await apiClient.get(`${EVENT_PREFIX}/${eventId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch event' };
+  }
+};
+
 export const fetchMyEvents = async () => {
   try {
     const response = await apiClient.get(`${EVENT_PREFIX}/my-events`);
