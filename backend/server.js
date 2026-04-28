@@ -6,6 +6,7 @@ import errorHandler from './middleware/errorHandler.js';
 import testRoutes from './routes/test.js';
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api', testRoutes);
 
 // Health check route
