@@ -7,6 +7,8 @@ import testRoutes from './routes/test.js';
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import { stripeWebhookHandler } from './controllers/paymentController.js';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +25,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// Stripe webhook endpoint requires raw body, so mount it before the JSON parser
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api', testRoutes);
 
 // Health check route

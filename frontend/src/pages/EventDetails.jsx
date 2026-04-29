@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchEventById } from '../services/eventService';
 import { createOrder } from '../services/orderService';
+import { createPaymentIntent } from '../services/paymentService';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../context/AuthContext';
 
 function EventDetails() {
@@ -19,6 +22,58 @@ function EventDetails() {
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
+
+  // Small payment form component using Stripe Elements
+  function CheckoutForm({ clientSecret, orderId }) {
+    const stripe = useStripe();
+    const elements = useElements();
+    const [processing, setProcessing] = useState(false);
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (!stripe || !elements) return;
+      setProcessing(true);
+      setMessage('');
+
+      const cardElement = elements.getElement(CardElement);
+      try {
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: { card: cardElement, billing_details: { name: customerInfo.name, email: customerInfo.email } },
+        });
+
+        if (result.error) {
+          setMessage(result.error.message || 'Payment failed');
+        } else {
+          if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+            setMessage('Payment succeeded. Waiting for server confirmation (webhook).');
+            // Do not mark order paid here — webhook is authoritative
+          } else {
+            setMessage('Payment processing: ' + (result.paymentIntent?.status || 'unknown'));
+          }
+        }
+      } catch (err) {
+        setMessage(err.message || 'Payment error');
+      } finally {
+        setProcessing(false);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
+        <div style={{ padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
+          <CardElement options={{ style: { base: { fontSize: '16px' } } }} />
+        </div>
+        <div>
+          <button type="submit" disabled={!stripe || processing} style={{ padding: '8px 12px' }}>
+            {processing ? 'Processing...' : 'Confirm Payment'}
+          </button>
+        </div>
+        {message && <div style={{ color: message.includes('succeeded') ? 'green' : 'red' }}>{message}</div>}
+      </form>
+    );
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -74,6 +129,12 @@ function EventDetails() {
       setSubmitting(true);
       const res = await createOrder(payload);
       setOrderResult(res.order);
+
+      // Create payment intent for this order
+      const pi = await createPaymentIntent(res.order._id);
+      setClientSecret(pi.clientSecret);
+
+      // Move to review/payment step — user will confirm card payment
       setStep(3);
     } catch (err) {
       alert(err.message || 'Failed to create order');
@@ -190,7 +251,20 @@ function EventDetails() {
           </div>
         )}
 
-        {step === 3 && orderResult && (
+        {/* If we have a clientSecret, show payment element to confirm card payment. Webhook will mark order paid. */}
+        {step === 3 && clientSecret && (
+          <div style={{ marginTop: 18 }}>
+            <h4>Enter payment details</h4>
+            <div style={{ maxWidth: 480 }}>
+              <Elements stripe={loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)} options={{ clientSecret }}>
+                <CheckoutForm clientSecret={clientSecret} orderId={orderResult?._id} />
+              </Elements>
+            </div>
+            <p style={{ marginTop: 10, color: '#666' }}>Payment confirmation is processed by Stripe; the server webhook will update order status.</p>
+          </div>
+        )}
+
+        {step === 3 && orderResult && !clientSecret && (
           <div>
             <h4>Order Submitted</h4>
             <p>Order ID: {orderResult._id}</p>

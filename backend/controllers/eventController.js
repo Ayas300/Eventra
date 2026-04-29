@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 
 const normalizeTicketTypes = (ticketTypes = []) => {
@@ -174,6 +175,10 @@ export const getEvents = async (req, res) => {
 // @access  Public
 export const getEventById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid event id' });
+    }
+
     const event = await Event.findById(req.params.id);
 
     if (!event) {
